@@ -1,4 +1,4 @@
-const API_URL = // PORT: 4000, ENDPOINT: /api;;
+const API_URL = "4000/api";//PORT: 4000, ENDPOINT: /api;
 
 // ── DOM elemek ────────────────────────────────────────────────────────────────
 
@@ -32,13 +32,43 @@ function modalHide(id) {
 
 function uzenetMutat(cim, szoveg, tipus) {
 
+    document.getElementById("visszajelzesCim").textContent = cim;
+
+    const szovegElem = document.getElementById("visszajelzesUzenet");
+    szovegElem.textContent = szoveg
+    if (tipus == 'hiba') {
+        szovegElem.classList.add("fw-semibold text-center text-danger");
+    }
+    else{
+        szovegElem.classList.add("fw-semibold text-center text-success");
+    }
+    modalShow("visszajelzesModal");
 }
 
 // ── Típusok betöltése ─────────────────────────────────────────────────────────
 
 function tipusokBetoltese(selectId) {
-
-}
+    const selectElem = document.getElementById(selectId);
+    if (!selectElem) {
+        return
+    }
+    fetch(API_URL + "/tipusok")
+        .then(r => r.json())
+        .then(adatok => {
+            adatok.forEach(element => {
+                const opcio = document.createElement("option");
+                opcio.value = element.tipus_kod
+                opcio.textContent = element.tipus_nev
+                selectElem.appendChild(opcio);
+            });
+        })
+        .catch(() => {
+            if (fagyiMuveletUzenet) {
+                fagyiMuveletUzenet.textContent = "Nem sikerült betölteni a típusokat"
+                fagyiMuveletUzenet.classList.add('text-danger text-center mb-4');
+            }
+        })
+} 
 
 // ── Fagylalt kártya ───────────────────────────────────────────────────────────
 
@@ -61,6 +91,31 @@ function szerkesztesModalMegnyit(gomb) {
 document.getElementById("szerkesztesUrlap").addEventListener("submit", function(e) {
     e.preventDefault();
 
+    // Lekérdezés
+
+    //Szerkesztés
+document.getElementById("torlesMegerosites").addEventListener("click", function() {
+    const adat = {
+        fagyiNev: document.getElementById("szerkesztesNev").value,
+        fagyiTipus: document.getElementById("szerkesztesTipus").value,
+        fagyiAr: document.getElementById("szerkesztesAr").value,
+        fagyiLeiras: document.getElementById("szerkesztesLeiras").value,
+        fagyiElerheto: document.getElementById("szerkesztesElerheto").value
+    };
+    fetch(API_URL + "fagylaltok/" + document.getElementById("szerkesztesId"),{
+    method: "PUT",
+    headers: {"Content-Type" : "application/json"},
+    body: JSON.stringify(adat)
+}).then(r => r.json())
+.then(valasz => {
+    modalHide('szerkesztesModal')
+    uzenetMutat('Sikeres módosítás', valasz.uzenet, "siker")
+})
+.catch(() => {
+    uzenetMutat('Hiba', "Hiba történt a módosítás során", "hiba")
+})
+});
+
 });
 
 // ── Törlés modal ──────────────────────────────────────────────────────────────
@@ -69,9 +124,6 @@ function torlesModalMegnyit(gomb) {
 
 }
 
-document.getElementById("torlesMegerosites").addEventListener("click", function() {
-
-});
 
 // ── Statisztika ───────────────────────────────────────────────────────────────
 
@@ -87,6 +139,30 @@ function statisztikaLekerdezese() {
 
 function ujFagyiMentese(e) {
     e.preventDefault();
+
+    const adat = {
+        fagyiNev: document.getElementById("fagyiNev").value,
+        fagyiTipus: document.getElementById("fagyiTipus").value,
+        fagyiAr: document.getElementById("fagyiAr").value,
+        fagyiLeiras: document.getElementById("fegyiLeiras").value,
+        fagyiElerheto: document.getElementById("fagyiElerheto").value
+    };
+
+    fetch(API_URL + "/fagylaltok",{
+        method: "POST",
+        headers: {"Content-Type" : "application/json"},
+        body: JSON.stringify(adat)
+        }
+    )
+        .then(r => r.json)
+        .then(valasz => {
+            uzenetMutat("Sikeres mentés", valasz.uzenet, "siker");
+            fagyiUrlap.reset();
+            fagyikLekerdezese();
+        })
+        .catch(() => {
+            uzenetMutat("Hiba", "Hiba történt a metnés során", "hiba")
+        })
 
 }
 
